@@ -12,7 +12,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('analyzer');
   const [user, setUser] = useState(null);
 
-  // Check if user is already logged in on page load
   useEffect(() => {
     const savedUser = localStorage.getItem('careerpath_user');
     if (savedUser) {
@@ -25,16 +24,12 @@ export default function App() {
     setUser(null);
   };
 
-  // IF NOT LOGGED IN, SHOW AUTH SCREEN
   if (!user) {
     return <AuthScreen onLogin={setUser} />;
   }
 
-  // LOGGED IN VIEW (DASHBOARD)
   return (
     <div className="flex h-screen bg-slate-100 font-sans text-slate-800 overflow-hidden">
-
-      {/* DARK MODE SIDEBAR */}
       <aside className="w-72 bg-[#0f172a] text-slate-300 flex flex-col shadow-2xl z-20">
         <div className="p-8 border-b border-slate-800">
           <div className="flex items-center gap-3 mb-2">
@@ -50,25 +45,20 @@ export default function App() {
           <button onClick={() => setActiveTab('analyzer')} className={`w-full flex items-center gap-4 p-4 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === 'analyzer' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40 translate-x-2' : 'hover:bg-slate-800 hover:text-white'}`}>
             <ChartIcon /> Smart Analyzer
           </button>
-
           <button onClick={() => setActiveTab('interview')} className={`w-full flex items-center gap-4 p-4 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === 'interview' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40 translate-x-2' : 'hover:bg-slate-800 hover:text-white'}`}>
             <ChatIcon /> Mock Interview
           </button>
-
           <button onClick={() => setActiveTab('editor')} className={`w-full flex items-center gap-4 p-4 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === 'editor' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40 translate-x-2' : 'hover:bg-slate-800 hover:text-white'}`}>
             <CheckIcon /> ATS Resume Fixer
           </button>
-
           <button onClick={() => setActiveTab('templates')} className={`w-full flex items-center gap-4 p-4 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === 'templates' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40 translate-x-2' : 'hover:bg-slate-800 hover:text-white'}`}>
             <DocumentIcon /> Domain Templates
           </button>
-
           <button onClick={() => setActiveTab('coverletter')} className={`w-full flex items-center gap-4 p-4 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === 'coverletter' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40 translate-x-2' : 'hover:bg-slate-800 hover:text-white'}`}>
             <MailIcon /> AI Cover Letter
           </button>
         </nav>
 
-        {/* User Profile Footer */}
         <div className="p-6 border-t border-slate-800 bg-slate-900/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -87,7 +77,6 @@ export default function App() {
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
       <main className="flex-1 overflow-y-auto bg-slate-50 relative">
         <header className="sticky top-0 bg-slate-50/80 backdrop-blur-md z-10 p-8 border-b border-slate-200">
           <h2 className="text-3xl font-extrabold text-slate-800">
@@ -113,18 +102,17 @@ export default function App() {
 }
 
 // ==========================================
-// AUTHENTICATION SCREEN COMPONENT (Upgraded UX)
+// AUTHENTICATION SCREEN COMPONENT
 // ==========================================
 function AuthScreen({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState(''); // New State
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(''); // Replaces the alert() popups
+  const [errorMsg, setErrorMsg] = useState('');
 
-  // Function to clear all fields when the user clicks the (X) icon
   const clearFields = () => {
     setErrorMsg('');
     setPassword('');
@@ -135,9 +123,8 @@ function AuthScreen({ onLogin }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg(''); // Clear previous errors
+    setErrorMsg('');
 
-    // Check if passwords match during Registration
     if (!isLogin && password !== confirmPassword) {
       setErrorMsg("Passwords do not match. Please try again.");
       return;
@@ -145,7 +132,7 @@ function AuthScreen({ onLogin }) {
 
     setLoading(true);
 
-    const url = isLogin ? 'http://127.0.0.1:5000/login' : 'http://127.0.0.1:5000/register';
+    const url = isLogin ? 'https://careerpath-ai-imzn.onrender.com/login' : 'https://careerpath-ai-imzn.onrender.com/register';
     const payload = isLogin ? { email, password } : { name, email, password };
 
     try {
@@ -160,7 +147,6 @@ function AuthScreen({ onLogin }) {
         localStorage.setItem('careerpath_user', JSON.stringify(data.user));
         onLogin(data.user);
       } else {
-        // Show inline error block instead of alert()
         setErrorMsg(data.error || "Authentication failed. Please check your details.");
       }
     } catch (err) {
@@ -169,7 +155,6 @@ function AuthScreen({ onLogin }) {
     setLoading(false);
   };
 
-  // Switch between Login and Signup, and clear fields so they don't carry over
   const toggleMode = () => {
     setIsLogin(!isLogin);
     clearFields();
@@ -177,7 +162,6 @@ function AuthScreen({ onLogin }) {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Decorations */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-indigo-500/20 rounded-full blur-[100px]"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/20 rounded-full blur-[100px]"></div>
 
@@ -190,7 +174,6 @@ function AuthScreen({ onLogin }) {
           <p className="text-slate-500 font-medium mt-2">{isLogin ? 'Sign in to continue to your dashboard.' : 'Create an account to start optimizing.'}</p>
         </div>
 
-        {/* INLINE ERROR MESSAGE BLOCK WITH CLEAR BUTTON */}
         {errorMsg && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl flex items-start justify-between shadow-sm animate-slide-up">
             <div className="flex gap-3">
@@ -201,7 +184,6 @@ function AuthScreen({ onLogin }) {
               type="button"
               onClick={clearFields}
               className="text-red-400 hover:text-red-700 bg-red-100 hover:bg-red-200 rounded-full w-6 h-6 flex items-center justify-center transition-colors shrink-0"
-              title="Clear all fields"
             >
               ✕
             </button>
@@ -226,7 +208,6 @@ function AuthScreen({ onLogin }) {
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full border-2 border-slate-100 p-4 rounded-2xl bg-slate-50 font-medium focus:border-indigo-500 outline-none transition-all" placeholder="••••••••" />
           </div>
 
-          {/* CONFIRM PASSWORD - ONLY VISIBLE DURING REGISTRATION */}
           {!isLogin && (
             <div className="space-y-2 animate-slide-up">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Confirm Password</label>
@@ -276,7 +257,7 @@ function AnalyzerTab() {
     formData.append('timeline', timeline);
 
     try {
-      const res = await fetch('http://127.0.0.1:5000/analyze', { method: 'POST', body: formData });
+      const res = await fetch('https://careerpath-ai-imzn.onrender.com/analyze', { method: 'POST', body: formData });
       const data = await res.json();
       if (res.ok) setResults(data);
       else alert("Error: " + data.error);
@@ -421,7 +402,7 @@ function InterviewTab() {
       : skillInput.split(' ').map(s => s.trim()).filter(s => s);
 
     try {
-      const res = await fetch('http://127.0.0.1:5000/generate_interview', {
+      const res = await fetch('https://careerpath-ai-imzn.onrender.com/generate_interview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skills: skillsArray })
@@ -502,7 +483,7 @@ function ResumeEditorTab() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await fetch('http://127.0.0.1:5000/review_resume', { method: 'POST', body: formData });
+      const res = await fetch('https://careerpath-ai-imzn.onrender.com/review_resume', { method: 'POST', body: formData });
       const data = await res.json();
       setFeedback(data);
     } catch (err) { alert("Error reaching backend."); }
@@ -568,7 +549,7 @@ function TemplatesTab() {
   ];
 
   const handleDownload = (domainID) => {
-    window.open(`http://127.0.0.1:5000/download_template/${domainID}`, '_blank');
+    window.open(`https://careerpath-ai-imzn.onrender.com/download_template/${domainID}`, '_blank');
   };
 
   return (
@@ -619,7 +600,7 @@ function CoverLetterTab() {
     formData.append('company', company);
 
     try {
-      const res = await fetch('http://127.0.0.1:5000/generate_cover_letter', { method: 'POST', body: formData });
+      const res = await fetch('https://careerpath-ai-imzn.onrender.com/generate_cover_letter', { method: 'POST', body: formData });
       const data = await res.json();
       if (res.ok) { setLetter(data.cover_letter); } else { alert("Server Error: " + data.error); }
     } catch (err) { alert("Failed to connect to backend."); }
