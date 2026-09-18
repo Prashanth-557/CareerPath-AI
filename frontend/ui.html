@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Career Guidance System</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f7f6; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
+        .hidden { display: none; }
+        .upload-section { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+        button { padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Career Guidance System</h1>
+        
+        <!-- We removed the <form> tag completely so it CANNOT refresh -->
+        <div class="upload-section">
+            <label for="role">Target Job Role:</label>
+            <select id="role">
+                <option value="Data Scientist">Data Scientist</option>
+                <option value="Software Engineer">Software Engineer</option>
+            </select>
+
+            <label for="file">Upload Resume (PDF):</label>
+            <input type="file" id="file" accept=".pdf">
+            
+            <button id="analyzeBtn">Analyze Profile</button>
+        </div>
+
+        <div id="results" class="results-section hidden">
+            <h2>Analysis Results</h2>
+            <p><strong>Match Score:</strong> <span id="score"></span>%</p>
+            
+            <div class="gaps-box">
+                <h3>Identified Skill Gaps</h3>
+                <ul id="gapsList"></ul>
+            </div>
+
+            <div class="learning-box">
+                <h3>Personalized Learning Path</h3>
+                <ul id="learningList"></ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- The JavaScript is now hardcoded directly into the HTML -->
+    <script>
+        document.getElementById('analyzeBtn').addEventListener('click', async function() {
+            const fileInput = document.getElementById('file');
+            const roleInput = document.getElementById('role');
+            const resultsDiv = document.getElementById('results');
+            const btn = document.getElementById('analyzeBtn');
+            
+            if (fileInput.files.length === 0) {
+                alert("Please select a PDF resume first.");
+                return;
+            }
+
+            btn.innerText = "Analyzing... Please wait";
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('role', roleInput.value);
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultsDiv.classList.remove('hidden');
+                    document.getElementById('score').innerText = data.match_score_percentage;
+                    
+                    const gapsList = document.getElementById('gapsList');
+                    gapsList.innerHTML = '';
+                    data.skill_gaps.forEach(gap => {
+                        let li = document.createElement('li');
+                        li.innerText = gap;
+                        gapsList.appendChild(li);
+                    });
+
+                    const learningList = document.getElementById('learningList');
+                    learningList.innerHTML = '';
+                    data.recommended_learning_path.forEach(course => {
+                        let li = document.createElement('li');
+                        li.innerText = course;
+                        learningList.appendChild(li);
+                    });
+                } else {
+                    alert("Error: " + data.error);
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Failed to connect to the backend server. Make sure app.py is running!");
+            } finally {
+                btn.innerText = "Analyze Profile";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

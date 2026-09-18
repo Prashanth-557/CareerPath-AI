@@ -1,0 +1,19 @@
+# --- Web Backend ---
+Flask==3.0.0
+Flask-Cors==4.0.0
+
+# --- Document Parsing (Resumes) ---
+pdfminer.six==20221105
+python-docx==1.1.0
+
+# --- Natural Language Processing (NLP) ---
+spacy==3.7.2
+nltk==3.8.1
+
+# --- Machine Learning & Data Processing ---
+scikit-learn==1.3.2
+pandas==2.1.3
+numpy==1.26.2
+
+# --- Utilities (For API calls to course platforms) ---
+requests==2.31.0
