@@ -81,7 +81,7 @@ export default function App() {
         <header className="sticky top-0 bg-slate-50/80 backdrop-blur-md z-10 p-8 border-b border-slate-200">
           <h2 className="text-3xl font-extrabold text-slate-800">
             {activeTab === 'analyzer' && "AI Skill Gap Analyzer"}
-            {activeTab === 'interview' && "Smart Interview Simulator"}
+            {activeTab === 'interview' && "Smart Assessment Engine"}
             {activeTab === 'editor' && "ATS Resume Optimizer"}
             {activeTab === 'templates' && "Industry Templates"}
             {activeTab === 'coverletter' && "GenAI Cover Letter Builder"}
@@ -385,18 +385,23 @@ function AnalyzerTab() {
 }
 
 // ==========================================
-// 2. MOCK INTERVIEW
+// 2. MOCK ASSESSMENT SIMULATOR (10 Questions & Grading)
 // ==========================================
 function InterviewTab() {
-  const [skillInput, setSkillInput] = useState('');
+  const [skillInput, setSkillInput] = useState('Python');
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [showAnswer, setShowAnswer] = useState(false);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [testCompleted, setTestCompleted] = useState(false);
 
-  const generateInterview = async () => {
-    if (!skillInput.trim()) return alert("Enter at least one skill.");
+  const startAssessment = async () => {
+    if (!skillInput.trim()) return alert("Enter at least one skill (e.g. Python, SQL, Machine Learning, React).");
     setLoading(true);
+    setTestCompleted(false);
+    setSelectedAnswers({});
+    setCurrentIndex(0);
+
     const skillsArray = skillInput.includes(',')
       ? skillInput.split(',').map(s => s.trim()).filter(s => s)
       : skillInput.split(' ').map(s => s.trim()).filter(s => s);
@@ -408,61 +413,212 @@ function InterviewTab() {
         body: JSON.stringify({ skills: skillsArray })
       });
       const data = await res.json();
-      setQuestions(data.questions);
-      setCurrentIndex(0);
-      setShowAnswer(false);
-    } catch (err) { alert("Failed to connect to backend."); }
+      if (res.ok && data.questions) {
+        setQuestions(data.questions);
+      } else {
+        alert("Failed to load questions: " + (data.error || "Unknown error"));
+      }
+    } catch (err) {
+      alert("Failed to connect to backend server.");
+    }
     setLoading(false);
   };
 
+  const handleSelectOption = (optionIndex) => {
+    setSelectedAnswers(prev => ({
+      ...prev,
+      [currentIndex]: optionIndex
+    }));
+  };
+
   const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setShowAnswer(false);
-    } else {
-      alert("🎉 Interview Complete! You survived.");
-      setQuestions(null);
+    if (selectedAnswers[currentIndex] === undefined) {
+      return alert("Please select an answer before continuing.");
     }
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+    } else {
+      setTestCompleted(true);
+    }
+  };
+
+  const calculateResults = () => {
+    let score = 0;
+    questions.forEach((q, idx) => {
+      if (selectedAnswers[idx] === q.ans) score += 1;
+    });
+    const percentage = Math.round((score / questions.length) * 100);
+    let grade = 'F';
+    if (percentage >= 90) grade = 'A+';
+    else if (percentage >= 80) grade = 'A';
+    else if (percentage >= 70) grade = 'B';
+    else if (percentage >= 60) grade = 'C';
+    return { score, total: questions.length, percentage, grade };
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-10">
       {!questions ? (
         <div className="bg-white p-12 rounded-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 text-center animate-slide-up">
-          <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-indigo-500 shadow-inner"><ChatIcon /></div>
-          <h2 className="text-3xl font-black text-slate-800 mb-4">Interactive Interview Simulator</h2>
-          <p className="text-lg font-medium text-slate-500 mb-10 max-w-2xl mx-auto">Enter your skills below. We will simulate a live technical interview, one question at a time.</p>
+          <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-indigo-500 shadow-inner">
+            <ChatIcon />
+          </div>
+          <h2 className="text-3xl font-black text-slate-800 mb-4">10-Question Technical Evaluation</h2>
+          <p className="text-lg font-medium text-slate-500 mb-10 max-w-2xl mx-auto">
+            Select a topic to test your technical competency. Answers and explanations are locked until you submit all questions.
+          </p>
           <div className="flex flex-col items-center gap-6 max-w-xl mx-auto">
             <div className="w-full text-left">
-              <label className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-2 block">Skills to Practice</label>
-              <input type="text" value={skillInput} onChange={(e) => setSkillInput(e.target.value)} placeholder="e.g. Python, Docker, SQL" className="w-full border-2 border-slate-200 p-5 rounded-2xl bg-slate-50 text-lg font-medium focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none" />
+              <label className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-2 block">
+                Target Domain / Skill
+              </label>
+              <select
+                value={skillInput}
+                onChange={(e) => setSkillInput(e.target.value)}
+                className="w-full border-2 border-slate-200 p-5 rounded-2xl bg-slate-50 text-lg font-semibold focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none cursor-pointer"
+              >
+                <option value="Python">Python (10 Questions)</option>
+                <option value="SQL">SQL & Database Systems (10 Questions)</option>
+                <option value="Machine Learning">Machine Learning & Data Science (10 Questions)</option>
+                <option value="React">React & Frontend Architecture (10 Questions)</option>
+              </select>
             </div>
-            <button onClick={generateInterview} disabled={loading} className="w-full py-5 bg-indigo-600 text-white rounded-2xl text-xl font-black hover:bg-indigo-700 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/30 transition-all duration-300 disabled:opacity-50">
-              {loading ? 'Booting Simulator...' : 'Start Live Interview'}
+            <button
+              onClick={startAssessment}
+              disabled={loading}
+              className="w-full py-5 bg-indigo-600 text-white rounded-2xl text-xl font-black hover:bg-indigo-700 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/30 transition-all duration-300 disabled:opacity-50"
+            >
+              {loading ? 'Compiling Assessment...' : 'Start Assessment (10 Questions)'}
             </button>
           </div>
         </div>
-      ) : (
+      ) : !testCompleted ? (
         <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-indigo-100 animate-slide-up relative overflow-hidden">
-          <div className="absolute top-0 left-0 h-2 bg-indigo-500 transition-all duration-500" style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}></div>
+          <div
+            className="absolute top-0 left-0 h-2 bg-indigo-600 transition-all duration-300"
+            style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+          ></div>
+
           <div className="flex justify-between items-center mb-8">
-            <span className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-bold uppercase tracking-wider text-sm">Topic: {questions[currentIndex].skill}</span>
-            <span className="text-slate-400 font-bold">Question {currentIndex + 1} of {questions.length}</span>
+            <span className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-bold uppercase tracking-wider text-sm">
+              Topic: {questions[currentIndex].topic}
+            </span>
+            <span className="text-slate-400 font-bold">
+              Question {currentIndex + 1} of {questions.length}
+            </span>
           </div>
-          <h3 className="text-3xl font-black text-slate-800 mb-10 leading-tight">"{questions[currentIndex].question}"</h3>
-          {!showAnswer ? (
-            <button onClick={() => setShowAnswer(true)} className="py-4 px-8 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors border border-slate-200">Reveal Answer Guide 👀</button>
-          ) : (
-            <div className="animate-slide-up">
-              <div className="bg-emerald-50 border border-emerald-200 p-8 rounded-2xl mb-8">
-                <h4 className="text-emerald-800 font-black mb-2 flex items-center gap-2">💡 Ideal Answer Structure:</h4>
-                <p className="text-emerald-700 font-medium text-lg">{questions[currentIndex].hint}</p>
-              </div>
-              <button onClick={handleNext} className="w-full py-5 bg-slate-800 text-white rounded-2xl text-xl font-black hover:bg-slate-900 transition-colors shadow-lg">
-                {currentIndex === questions.length - 1 ? 'Finish Interview' : 'Next Question ➔'}
-              </button>
-            </div>
-          )}
+
+          <h3 className="text-2xl font-black text-slate-800 mb-8 leading-snug">
+            {questions[currentIndex].q}
+          </h3>
+
+          <div className="space-y-4 mb-10">
+            {questions[currentIndex].options.map((opt, optIdx) => {
+              const isSelected = selectedAnswers[currentIndex] === optIdx;
+              return (
+                <button
+                  key={optIdx}
+                  onClick={() => handleSelectOption(optIdx)}
+                  className={`w-full text-left p-5 rounded-2xl border-2 font-semibold text-lg transition-all duration-200 flex items-center justify-between ${isSelected
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-900 shadow-sm'
+                      : 'border-slate-100 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                    }`}
+                >
+                  <span>{opt}</span>
+                  <div
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'
+                      }`}
+                  >
+                    {isSelected && <span className="text-xs">✓</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={handleNext}
+            className="w-full py-5 bg-slate-800 text-white rounded-2xl text-xl font-black hover:bg-slate-900 hover:-translate-y-1 transition-all duration-300 shadow-lg"
+          >
+            {currentIndex === questions.length - 1 ? 'Submit Assessment & Grade' : 'Next Question ➔'}
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-10 animate-slide-up">
+          {(() => {
+            const { score, total, percentage, grade } = calculateResults();
+            return (
+              <>
+                <div className="bg-white p-12 rounded-[3rem] shadow-xl border border-slate-100 text-center">
+                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">
+                    Evaluation Complete
+                  </div>
+                  <h3 className="text-4xl font-black text-slate-800 mb-6">Candidate Assessment Report</h3>
+                  <div className="flex justify-center items-center gap-10 my-8">
+                    <div className="text-center">
+                      <div className="text-7xl font-black text-indigo-600">{percentage}%</div>
+                      <p className="text-slate-400 font-bold mt-2">Overall Score ({score}/{total})</p>
+                    </div>
+                    <div className="w-px h-20 bg-slate-200"></div>
+                    <div className="text-center">
+                      <div className={`text-7xl font-black ${percentage >= 70 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                        {grade}
+                      </div>
+                      <p className="text-slate-400 font-bold mt-2">Proficiency Grade</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { setQuestions(null); setTestCompleted(false); }}
+                    className="px-8 py-4 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-colors"
+                  >
+                    Take Another Assessment
+                  </button>
+                </div>
+
+                <div className="bg-white p-12 rounded-[3rem] shadow-xl border border-slate-100">
+                  <h4 className="text-2xl font-black text-slate-800 mb-8 border-b border-slate-100 pb-4">
+                    Detailed Answer Key & Rubric
+                  </h4>
+                  <div className="space-y-8">
+                    {questions.map((q, idx) => {
+                      const userChoice = selectedAnswers[idx];
+                      const isCorrect = userChoice === q.ans;
+                      return (
+                        <div
+                          key={idx}
+                          className={`p-6 rounded-2xl border-2 ${isCorrect ? 'border-emerald-100 bg-emerald-50/40' : 'border-red-100 bg-red-50/40'
+                            }`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="font-bold text-xs uppercase px-3 py-1 rounded-lg bg-slate-100 text-slate-700">
+                              Question {idx + 1}
+                            </span>
+                            <span className={`font-bold text-sm ${isCorrect ? 'text-emerald-700' : 'text-red-700'}`}>
+                              {isCorrect ? 'Correct (+1)' : 'Incorrect (0)'}
+                            </span>
+                          </div>
+                          <p className="font-bold text-lg text-slate-800 mb-4">{q.q}</p>
+                          <div className="text-sm space-y-1 mb-4 font-semibold">
+                            <p className={isCorrect ? 'text-emerald-800' : 'text-red-800'}>
+                              Your Answer: {userChoice !== undefined ? q.options[userChoice] : 'None'}
+                            </p>
+                            {!isCorrect && (
+                              <p className="text-emerald-800">
+                                Correct Answer: {q.options[q.ans]}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-sm bg-white p-4 rounded-xl border border-slate-200 text-slate-600 font-medium leading-relaxed">
+                            💡 <span className="font-bold text-slate-800">Explanation:</span> {q.exp}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
     </div>
