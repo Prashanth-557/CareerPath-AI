@@ -8,6 +8,8 @@ const ChatIcon = () => <svg className="w-5 h-5" fill="none" stroke="currentColor
 const MailIcon = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>;
 const UploadIcon = () => <svg className="w-10 h-10 mb-3 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>;
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://careerpath-ai-imzn.onrender.com';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('analyzer');
   const [user, setUser] = useState(null);
@@ -132,7 +134,7 @@ function AuthScreen({ onLogin }) {
 
     setLoading(true);
 
-    const url = isLogin ? 'https://careerpath-ai-imzn.onrender.com/login' : 'https://careerpath-ai-imzn.onrender.com/register';
+    const url = isLogin ? `${API_BASE_URL}/login` : `${API_BASE_URL}/register`;
     const payload = isLogin ? { email, password } : { name, email, password };
 
     try {
@@ -257,7 +259,7 @@ function AnalyzerTab() {
     formData.append('timeline', timeline);
 
     try {
-      const res = await fetch('https://careerpath-ai-imzn.onrender.com/analyze', { method: 'POST', body: formData });
+      const res = await fetch(`${API_BASE_URL}/analyze`, { method: 'POST', body: formData });
       const data = await res.json();
       if (res.ok) setResults(data);
       else alert("Error: " + data.error);
@@ -407,19 +409,19 @@ function InterviewTab() {
       : skillInput.split(' ').map(s => s.trim()).filter(s => s);
 
     try {
-      const res = await fetch('https://careerpath-ai-imzn.onrender.com/generate_interview', {
+      const res = await fetch(`${API_BASE_URL}/generate_interview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skills: skillsArray })
       });
       const data = await res.json();
-      if (res.ok && data.questions) {
+      if (res.ok && data.questions && data.questions.length > 0) {
         setQuestions(data.questions);
       } else {
-        alert("Failed to load questions: " + (data.error || "Unknown error"));
+        alert("Failed to load questions: " + (data.error || "No questions found"));
       }
     } catch (err) {
-      alert("Failed to connect to backend server.");
+      alert("Failed to connect to backend server. Is it running?");
     }
     setLoading(false);
   };
@@ -520,8 +522,8 @@ function InterviewTab() {
                   key={optIdx}
                   onClick={() => handleSelectOption(optIdx)}
                   className={`w-full text-left p-5 rounded-2xl border-2 font-semibold text-lg transition-all duration-200 flex items-center justify-between ${isSelected
-                      ? 'border-indigo-600 bg-indigo-50 text-indigo-900 shadow-sm'
-                      : 'border-slate-100 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-900 shadow-sm'
+                    : 'border-slate-100 bg-slate-50 text-slate-700 hover:bg-slate-100'
                     }`}
                 >
                   <span>{opt}</span>
@@ -639,10 +641,14 @@ function ResumeEditorTab() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await fetch('https://careerpath-ai-imzn.onrender.com/review_resume', { method: 'POST', body: formData });
+      const res = await fetch(`${API_BASE_URL}/review_resume`, { method: 'POST', body: formData });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Server error: ${res.status}`);
+      }
       const data = await res.json();
       setFeedback(data);
-    } catch (err) { alert("Error reaching backend."); }
+    } catch (err) { alert("Error reaching backend: " + err.message); }
     setLoading(false);
   };
 
@@ -705,7 +711,7 @@ function TemplatesTab() {
   ];
 
   const handleDownload = (domainID) => {
-    window.open(`https://careerpath-ai-imzn.onrender.com/download_template/${domainID}`, '_blank');
+    window.open(`${API_BASE_URL}/download_template/${domainID}`, '_blank');
   };
 
   return (
@@ -756,7 +762,7 @@ function CoverLetterTab() {
     formData.append('company', company);
 
     try {
-      const res = await fetch('https://careerpath-ai-imzn.onrender.com/generate_cover_letter', { method: 'POST', body: formData });
+      const res = await fetch(`${API_BASE_URL}/generate_cover_letter`, { method: 'POST', body: formData });
       const data = await res.json();
       if (res.ok) { setLetter(data.cover_letter); } else { alert("Server Error: " + data.error); }
     } catch (err) { alert("Failed to connect to backend."); }

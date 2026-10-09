@@ -85,7 +85,11 @@ def analyze():
     github_user = request.form.get('github_user', '')
     
     # Extract Resume Text
-    resume_text = extract_text(file)
+    try:
+        pdf_bytes = file.read()
+        resume_text = extract_text(io.BytesIO(pdf_bytes))
+    except Exception as e:
+        return jsonify({"error": f"Failed to parse PDF: {str(e)}"}), 500
     
     # Define JD / Target Skills based on role
     domain_skills = {
@@ -267,7 +271,11 @@ def review_resume():
         return jsonify({"error": "No file uploaded"}), 400
     
     file = request.files['file']
-    text = extract_text(file)
+    try:
+        pdf_bytes = file.read()
+        text = extract_text(io.BytesIO(pdf_bytes))
+    except Exception as e:
+        return jsonify({"error": f"Failed to parse PDF: {str(e)}"}), 500
     
     structural_issues = []
     text_lower = text.lower()
@@ -284,8 +292,8 @@ def review_resume():
     blob = TextBlob(text)
     spelling_alerts = []
     
-    # Limit spell check to a sample of 200 words to prevent slow cloud timeouts
-    words = blob.words[:200]
+    # Limit spell check to a sample of 50 words to prevent slow processing timeouts
+    words = blob.words[:50]
     for word in words:
         if len(word) > 4:
             corrected = word.correct()
@@ -345,7 +353,11 @@ def generate_cover_letter():
     role = request.form.get('role', 'Software Engineer')
     company = request.form.get('company', 'Hiring Company')
     
-    text = extract_text(file)
+    try:
+        pdf_bytes = file.read()
+        text = extract_text(io.BytesIO(pdf_bytes))
+    except Exception as e:
+        return jsonify({"error": f"Failed to parse PDF: {str(e)}"}), 500
     
     # Regex Extraction for Contact Info
     emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', text)
